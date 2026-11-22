@@ -1,0 +1,50 @@
+
+name: Build Kaisar Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'kaisar_source.zip'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    name: Build Kaisar APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Extract project
+        run: |
+          unzip -q kaisar_source.zip -d app
+          test -f app/pubspec.yaml
+
+      - name: Install dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: app
+        run: flutter build apk --debug --android-skip-build-dependency-validation
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kaisar-Management-Keuangan-APK
+          path: app/build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
